@@ -1,6 +1,6 @@
 ## Yggdrasil
 ###### *<div align="right"><sub>// Overview</sub></div>*
-Yggdrasil Tasks is a feature-rich to-do application developed using pure C. With a clean and intuitive interface, along with a range of useful features to streamline your productivity, this tool is designed to help you stay organized and on top of your daily tasks.
+Yggdrasil is a feature-rich to-do application developed using pure C. With a clean and intuitive interface, along with a range of useful features to streamline your productivity, this tool is designed to help you stay organized and on top of your daily tasks.
 
 ###### *<div align="right"><sub>// Screenshot</sub></div>*
 <div align="center">
