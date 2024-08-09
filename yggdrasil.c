@@ -111,9 +111,9 @@ int main() {
     theme.div_props.color = LF_NO_COLOR;
     lf_set_theme(theme);
 
-    titlefont = lf_load_font("./fonts/inter-bold.ttf", 30);
+    titlefont = lf_load_font("./assets/fonts/inter-bold.ttf", 30);
 
-    removetexture = lf_load_texture("./icons/remove.png", true, LF_TEX_FILTER_LINEAR);
+    removetexture = lf_load_texture("./assets/icons/remove.png", true, LF_TEX_FILTER_LINEAR);
 
     task_entry* entry = (task_entry*)malloc(sizeof(*entry));
     entry->priority = PRIORITY_LOW;
