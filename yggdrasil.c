@@ -26,7 +26,7 @@ typedef struct {
 #define WIN_MARGIN 15.0f
 
 static int winw = 1280, winh = 720;
-static LfFont titlefont;
+static LfFont titlefont, smallfont;
 static entry_filter current_filter;
 
 static task_entry* entries[1024];
@@ -63,7 +63,7 @@ static void renderfilters() {
   props.color = LF_NO_COLOR;
   props.margin_left = 10.0f;
   props.margin_right = 10.0f;
-  props.margin_top = 10.0f;
+  props.margin_top = 20.0f;
   props.padding = 10.0f;
   props.border_width = 0.0f;
   props.color = LF_NO_COLOR;
@@ -112,15 +112,18 @@ int main() {
     lf_set_theme(theme);
 
     titlefont = lf_load_font("./assets/fonts/inter-bold.ttf", 30);
+    smallfont = lf_load_font("./assets/fonts/inter.ttf", 20);
 
     removetexture = lf_load_texture("./assets/icons/remove.png", true, LF_TEX_FILTER_LINEAR);
 
-    task_entry* entry = (task_entry*)malloc(sizeof(*entry));
-    entry->priority = PRIORITY_LOW;
-    entry->completed = false;
-    entry->date = "nothin";
-    entry->desc = "Buy a Cat";
-    entries[num_entries++] = entry;
+    for(uint32_t i = 0; i < 5; i++) {
+      task_entry* entry = (task_entry*)malloc(sizeof(*entry));
+      entry->priority = PRIORITY_LOW;
+      entry->completed = false;
+      entry->date = "nothin";
+      entry->desc = "Buy a Cat";
+      entries[num_entries++] = entry;
+    }
 
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
@@ -141,7 +144,15 @@ int main() {
                         ((vec2s){winw - lf_get_ptr_x() - WIN_MARGIN, 
                         (winh - lf_get_ptr_y() - WIN_MARGIN)}),
                         true);
+
+          uint32_t renderedcount = 0;
           for(uint32_t i = 0; i < num_entries; i++) {
+            if(current_filter == FILTER_LOW && entries[i]->priority != PRIORITY_LOW) continue;
+            if(current_filter == FILTER_MEDIUM && entries[i]->priority != PRIORITY_MEDIUM) continue;
+            if(current_filter == FILTER_HIGH && entries[i]->priority != PRIORITY_HIGH) continue;
+            if(current_filter == FILTER_COMPLETED && !entries[i]->completed) continue;
+            if(current_filter == FILTER_IN_PROGRESS && entries[i]->completed) continue;
+
             task_entry* entry = entries[i];
             float priority_size = 15.0f;
             float ptry_before = lf_get_ptr_y();
@@ -168,9 +179,11 @@ int main() {
             props.color = LF_NO_COLOR;
             props.border_width = 0.0f; props.padding = 0.0f; props.margin_top = 3.0f; props.margin_left = 10.0f;
             lf_push_style_props(props);
-            if(lf_image_button(((LfTexture){.id = removetexture.id, .width = 20, .height = 20})) ==
-              LF_CLICKED) {
-
+            if(lf_image_button(((LfTexture){.id = removetexture.id, .width = 20, .height = 20})) == LF_CLICKED) {
+              for(uint32_t j = i; j < num_entries -1; j++) {
+                entries[j] = entries[j + 1];
+              }
+              num_entries--;
               }
             lf_pop_style_props();
           }
@@ -185,13 +198,30 @@ int main() {
             }
             lf_pop_style_props();
           }
+            lf_push_font(&smallfont);
             LfUIElementProps props = lf_get_theme().text_props;
-            props.margin_top = 4.0;
+            props.margin_top = 0;
             props.margin_left = 5.0f;
             lf_push_style_props(props);
+
+            float descptr_x = lf_get_ptr_x();
             lf_text(entry->desc);
+
+            lf_set_ptr_x_absolute(descptr_x);
+            lf_set_ptr_y_absolute(lf_get_ptr_y() + smallfont.font_size);
+            props.text_color = (LfColor){150, 150, 150, 255};
+            lf_push_style_props(props);
+            lf_text(entry->date);
             lf_pop_style_props();
-            lf_next_line();
+            lf_pop_font();
+
+            lf_next_line();            
+
+            renderedcount++;
+          }
+
+          if(!renderedcount) {
+            lf_text("No tasks to show.");
           }
           lf_div_end();
         }
