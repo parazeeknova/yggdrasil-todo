@@ -1,6 +1,12 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <leif/leif.h>
+#include <stdint.h>
+
+typedef enum {
+  TAB_DASHBOARD = 0,
+  TAB_NEW_TASK
+} gui_tab;
 
 typedef enum {
   FILTER_ALL = 0,
@@ -28,6 +34,7 @@ typedef struct {
 static int winw = 1280, winh = 720;
 static LfFont titlefont, smallfont;
 static entry_filter current_filter;
+static gui_tab current_tab;
 
 static task_entry* entries[1024];
 static uint32_t num_entries = 0;
@@ -98,145 +105,159 @@ static void renderfilters() {
   lf_set_line_should_overflow(true);
 }
 
+static void renderentries() {
+  lf_div_begin(((vec2s){lf_get_ptr_x(), lf_get_ptr_y()}),
+                ((vec2s){winw - lf_get_ptr_x() - WIN_MARGIN, 
+                (winh - lf_get_ptr_y() - WIN_MARGIN)}),
+                true);
+
+  uint32_t renderedcount = 0;
+  for(uint32_t i = 0; i < num_entries; i++) {
+    if(current_filter == FILTER_LOW && entries[i]->priority != PRIORITY_LOW) continue;
+    if(current_filter == FILTER_MEDIUM && entries[i]->priority != PRIORITY_MEDIUM) continue;
+    if(current_filter == FILTER_HIGH && entries[i]->priority != PRIORITY_HIGH) continue;
+    if(current_filter == FILTER_COMPLETED && !entries[i]->completed) continue;
+    if(current_filter == FILTER_IN_PROGRESS && entries[i]->completed) continue;
+
+    task_entry* entry = entries[i];
+    float priority_size = 15.0f;
+    float ptry_before = lf_get_ptr_y();
+    lf_set_ptr_x_absolute(lf_get_ptr_x() + 5.0f);
+    lf_set_ptr_y_absolute(lf_get_ptr_y() + 5.0f);
+    switch(entry -> priority) {
+      case PRIORITY_LOW: {
+        lf_rect(priority_size, priority_size, (LfColor){76, 175, 80, 255}, 4.0f);
+        break;
+      }
+      case PRIORITY_MEDIUM: {
+        lf_rect(priority_size, priority_size, (LfColor){255, 235, 59, 255}, 4.0f);
+        break;
+      }
+      case PRIORITY_HIGH: {
+        lf_rect(priority_size, priority_size, (LfColor){244, 67, 54, 255}, 4.0f);
+        break;
+      }
+    }
+    lf_set_ptr_y_absolute(ptry_before);
+  
+  {
+    LfUIElementProps props = lf_get_theme().button_props;
+    props.color = LF_NO_COLOR;
+    props.border_width = 0.0f; props.padding = 0.0f; props.margin_top = 3.0f; props.margin_left = 10.0f;
+    lf_push_style_props(props);
+    if(lf_image_button(((LfTexture){.id = removetexture.id, .width = 20, .height = 20})) == LF_CLICKED) {
+      for(uint32_t j = i; j < num_entries -1; j++) {
+        entries[j] = entries[j + 1];
+      }
+      num_entries--;
+      }
+    lf_pop_style_props();
+  }
+  {
+    LfUIElementProps props = lf_get_theme().checkbox_props;
+    props.border_width = 1.0f; props.corner_radius = 0.0f; props.margin_top = 0; props.padding= 5.0f;
+    props.margin_left = 5.0f;
+    props.color = lf_color_from_zto((vec4s){0.05f, 0.05f, 0.05f, 1.0f});
+    lf_push_style_props(props);
+    if(lf_checkbox("", &entry->completed, LF_NO_COLOR, ((LfColor){65, 167, 204, 255})) == LF_CLICKED) {
+      
+    }
+    lf_pop_style_props();
+  }
+    lf_push_font(&smallfont);
+    LfUIElementProps props = lf_get_theme().text_props;
+    props.margin_top = 0;
+    props.margin_left = 5.0f;
+    lf_push_style_props(props);
+
+    float descptr_x = lf_get_ptr_x();
+    lf_text(entry->desc);
+
+    lf_set_ptr_x_absolute(descptr_x);
+    lf_set_ptr_y_absolute(lf_get_ptr_y() + smallfont.font_size);
+    props.text_color = (LfColor){150, 150, 150, 255};
+    lf_push_style_props(props);
+    lf_text(entry->date);
+    lf_pop_style_props();
+    lf_pop_font();
+
+    lf_next_line();            
+
+    renderedcount++;
+  }
+
+  if(!renderedcount) {
+    lf_text("No tasks to show.");
+  }
+  lf_div_end();
+}
+
+static void rendernewtask() {
+  
+}
+
 int main() {
-    glfwInit();
+  glfwInit();
 
-    GLFWwindow* window = glfwCreateWindow(winw, winh, "Todo", NULL, NULL);
+  GLFWwindow* window = glfwCreateWindow(winw, winh, "Todo", NULL, NULL);
 
-    glfwMakeContextCurrent(window);
+  glfwMakeContextCurrent(window);
 
-    lf_init_glfw(winw, winh, window);
+  lf_init_glfw(winw, winh, window);
 
-    LfTheme theme = lf_default_theme();
-    theme.div_props.color = LF_NO_COLOR;
-    lf_set_theme(theme);
+  LfTheme theme = lf_default_theme();
+  theme.div_props.color = LF_NO_COLOR;
+  lf_set_theme(theme);
 
-    titlefont = lf_load_font("./assets/fonts/inter-bold.ttf", 30);
-    smallfont = lf_load_font("./assets/fonts/inter.ttf", 20);
+  titlefont = lf_load_font("./assets/fonts/inter-bold.ttf", 30);
+  smallfont = lf_load_font("./assets/fonts/inter.ttf", 20);
 
-    removetexture = lf_load_texture("./assets/icons/remove.png", true, LF_TEX_FILTER_LINEAR);
+  removetexture = lf_load_texture("./assets/icons/remove.png", true, LF_TEX_FILTER_LINEAR);
 
-    for(uint32_t i = 0; i < 5; i++) {
-      task_entry* entry = (task_entry*)malloc(sizeof(*entry));
-      entry->priority = PRIORITY_LOW;
-      entry->completed = false;
-      entry->date = "nothin";
-      entry->desc = "Buy a Cat";
-      entries[num_entries++] = entry;
-    }
+  for(uint32_t i = 0; i < 5; i++) {
+    task_entry* entry = (task_entry*)malloc(sizeof(*entry));
+    entry->priority = PRIORITY_LOW;
+    entry->completed = false;
+    entry->date = "nothin";
+    entry->desc = "Buy a Cat";
+    entries[num_entries++] = entry;
+  }
 
-    while (!glfwWindowShouldClose(window)) {
-        glClear(GL_COLOR_BUFFER_BIT);
-        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+  while (!glfwWindowShouldClose(window)) {
+      glClear(GL_COLOR_BUFFER_BIT);
+      glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
 
-        lf_begin();
+      lf_begin();
 
-        lf_div_begin(((vec2s){WIN_MARGIN, WIN_MARGIN}), 
-                      ((vec2s){winw - WIN_MARGIN * 2.0f, winh - WIN_MARGIN * 2.0f}),
-        true);
+      lf_div_begin(((vec2s){WIN_MARGIN, WIN_MARGIN}), 
+                    ((vec2s){winw - WIN_MARGIN * 2.0f, winh - WIN_MARGIN * 2.0f}),
+      true);
 
-        rendertopbar();
-        lf_next_line();
-        renderfilters();
-        lf_next_line();
-        {
-          lf_div_begin(((vec2s){lf_get_ptr_x(), lf_get_ptr_y()}),
-                        ((vec2s){winw - lf_get_ptr_x() - WIN_MARGIN, 
-                        (winh - lf_get_ptr_y() - WIN_MARGIN)}),
-                        true);
-
-          uint32_t renderedcount = 0;
-          for(uint32_t i = 0; i < num_entries; i++) {
-            if(current_filter == FILTER_LOW && entries[i]->priority != PRIORITY_LOW) continue;
-            if(current_filter == FILTER_MEDIUM && entries[i]->priority != PRIORITY_MEDIUM) continue;
-            if(current_filter == FILTER_HIGH && entries[i]->priority != PRIORITY_HIGH) continue;
-            if(current_filter == FILTER_COMPLETED && !entries[i]->completed) continue;
-            if(current_filter == FILTER_IN_PROGRESS && entries[i]->completed) continue;
-
-            task_entry* entry = entries[i];
-            float priority_size = 15.0f;
-            float ptry_before = lf_get_ptr_y();
-            lf_set_ptr_x_absolute(lf_get_ptr_x() + 5.0f);
-            lf_set_ptr_y_absolute(lf_get_ptr_y() + 5.0f);
-            switch(entry -> priority) {
-              case PRIORITY_LOW: {
-                lf_rect(priority_size, priority_size, (LfColor){76, 175, 80, 255}, 4.0f);
-                break;
-              }
-              case PRIORITY_MEDIUM: {
-                lf_rect(priority_size, priority_size, (LfColor){255, 235, 59, 255}, 4.0f);
-                break;
-              }
-              case PRIORITY_HIGH: {
-                lf_rect(priority_size, priority_size, (LfColor){244, 67, 54, 255}, 4.0f);
-                break;
-              }
-            }
-            lf_set_ptr_y_absolute(ptry_before);
-          
-          {
-            LfUIElementProps props = lf_get_theme().button_props;
-            props.color = LF_NO_COLOR;
-            props.border_width = 0.0f; props.padding = 0.0f; props.margin_top = 3.0f; props.margin_left = 10.0f;
-            lf_push_style_props(props);
-            if(lf_image_button(((LfTexture){.id = removetexture.id, .width = 20, .height = 20})) == LF_CLICKED) {
-              for(uint32_t j = i; j < num_entries -1; j++) {
-                entries[j] = entries[j + 1];
-              }
-              num_entries--;
-              }
-            lf_pop_style_props();
-          }
-          {
-            LfUIElementProps props = lf_get_theme().checkbox_props;
-            props.border_width = 1.0f; props.corner_radius = 0.0f; props.margin_top = 0; props.padding= 5.0f;
-            props.margin_left = 5.0f;
-            props.color = lf_color_from_zto((vec4s){0.05f, 0.05f, 0.05f, 1.0f});
-            lf_push_style_props(props);
-            if(lf_checkbox("", &entry->completed, LF_NO_COLOR, ((LfColor){65, 167, 204, 255})) == LF_CLICKED) {
-              
-            }
-            lf_pop_style_props();
-          }
-            lf_push_font(&smallfont);
-            LfUIElementProps props = lf_get_theme().text_props;
-            props.margin_top = 0;
-            props.margin_left = 5.0f;
-            lf_push_style_props(props);
-
-            float descptr_x = lf_get_ptr_x();
-            lf_text(entry->desc);
-
-            lf_set_ptr_x_absolute(descptr_x);
-            lf_set_ptr_y_absolute(lf_get_ptr_y() + smallfont.font_size);
-            props.text_color = (LfColor){150, 150, 150, 255};
-            lf_push_style_props(props);
-            lf_text(entry->date);
-            lf_pop_style_props();
-            lf_pop_font();
-
-            lf_next_line();            
-
-            renderedcount++;
-          }
-
-          if(!renderedcount) {
-            lf_text("No tasks to show.");
-          }
-          lf_div_end();
+      switch(current_tab) {
+        case TAB_DASHBOARD: {
+          rendertopbar();
+          lf_next_line();
+          renderfilters();
+          lf_next_line();
+          renderentries();
+          break;
         }
+        case TAB_NEW_TASK: {
+          rendernewtask();
+        }
+      }
 
-        lf_div_end();
-        lf_end();
+      lf_div_end();
+      lf_end();
 
-        glfwPollEvents();
-        glfwSwapBuffers(window);
-    }
+      glfwPollEvents();
+      glfwSwapBuffers(window);
+  }
 
-    lf_free_font(&titlefont);
+  lf_free_font(&titlefont);
 
-    glfwDestroyWindow(window);
-    glfwTerminate();
+  glfwDestroyWindow(window);
+  glfwTerminate();
 
-    return 0;
+  return 0;
 }
