@@ -1,4 +1,4 @@
-## Yggdrasil
+## Yggdrasil - A To-Do Application
 ###### *<div align="right"><sub>// Overview</sub></div>*
 _Yggdrasil_ is a everyday to-do application written in C. With a clean and intuitive interface, along with a range of useful features to streamline your productivity.
 
@@ -13,16 +13,16 @@ The UI of the applicaton is written with the [leif](https://github.com/cococry/l
   <a>
     <img src="assets/todo.png" alt="Logo" width="90%">
   </a>
-  <p> Yggdrasil (TODO) </p>
+  <p>Yggdrasil</p>
 </div>
 
 >[!IMPORTANT]
 > Application only supports Linux and MacOS.
 
-### Development or Running the Application
-###### *<div align="right"><sub>// Prerequisites</sub></div>*
+###### *<div align="right"><strong>// Development & Running the Application</Strong></div>*
+###### *<div align="left"><sub>// Prerequisites</sub></div>*
 ```bash
-sudo pacman -S gcc glfw glew cglm # Arch Linux
+sudo pacman -S gcc make glfw glew cglm # Arch Linux 
 yay -S libclipboard-git
 
 git clone https://github.com/cococry/leif # Clone leif (UI Library)
@@ -30,17 +30,17 @@ cd leif
 make -j$(nproc) && sudo make install
 cp -rf ./.leif ~/
 ```
-###### *<div align="right"><sub>// Build</sub></div>*
+###### *<div align="left"><sub>// Build</sub></div>*
 ```bash
 gcc -o todo yggdrasil.c -lleif -lglfw -lm -lGL -lclipboard
 ```
-###### *<div align="right"><sub>// Usage</sub></div>*
+###### *<div align="left"><sub>// Usage</sub></div>*
 ```bash
 ./todo
 ```
 
-### Credits
+###### *<div align="right"><strong>// Credits</Strong></div>*
 [cococry](https://github.com/cococry) for the [leif](https://github.com/cococry/leif) UI library.
 
-### License
+###### *<div align="right"><strong>// License</Strong></div>*
 Yggdrasil is licensed under the [MIT License](../LICENSE).
