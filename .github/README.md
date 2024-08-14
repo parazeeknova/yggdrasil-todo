@@ -19,7 +19,7 @@ The UI of the applicaton is written with the [leif](https://github.com/cococry/l
 >[!IMPORTANT]
 > Application only supports Linux and MacOS.
 
-###### *<div align="right"><strong>// Development & Running the Application</Strong></div>*
+###### *<div align="left"><strong> Development & Running the Application </Strong></div>*
 ###### *<div align="left"><sub>// Prerequisites</sub></div>*
 ```bash
 sudo pacman -S gcc make glfw glew cglm # Arch Linux 
@@ -39,8 +39,8 @@ gcc -o todo yggdrasil.c -lleif -lglfw -lm -lGL -lclipboard
 ./todo
 ```
 
-###### *<div align="right"><strong>// Credits</Strong></div>*
+###### *<div align="left"><strong> Credits </Strong></div>*
 [cococry](https://github.com/cococry) for the [leif](https://github.com/cococry/leif) UI library.
 
-###### *<div align="right"><strong>// License</Strong></div>*
+###### *<div align="left"><strong> License </Strong></div>*
 Yggdrasil is licensed under the [MIT License](../LICENSE).
