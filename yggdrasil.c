@@ -142,14 +142,12 @@ char* get_command_output(const char* cmd) {
     char *result = NULL;
     size_t result_size = 0;
 
-    // Opening a new pipe with the fiven command
     fp = popen(cmd, "r");
     if (fp == NULL) {
         printf("Failed to run command\n");
         return NULL;
     }
 
-    // Reading the output
     while (fgets(buffer, sizeof(buffer), fp) != NULL) {
         size_t buffer_len = strlen(buffer);
         char *temp = realloc(result, result_size + buffer_len + 1);
@@ -288,7 +286,7 @@ static void renderentries() {
       }
     }
     lf_set_ptr_y_absolute(ptry_before);
-  
+
   {
     LfUIElementProps props = lf_get_theme().button_props;
     props.color = LF_NO_COLOR;
@@ -302,6 +300,7 @@ static void renderentries() {
         entries[j] = entries[j + 1];
       }
       num_entries--;
+      serialize_todo_list("./tododata.bin");
       }
     lf_pop_style_props();
   }
@@ -315,7 +314,7 @@ static void renderentries() {
     props.color = lf_color_from_zto((vec4s){0.05f, 0.05f, 0.05f, 1.0f});
     lf_push_style_props(props);
     if(lf_checkbox("", &entry->completed, LF_NO_COLOR, ((LfColor){65, 167, 204, 255})) == LF_CLICKED) {
-      
+      serialize_todo_list("./tododata.bin");
     }
     lf_pop_style_props();
   }
@@ -420,7 +419,8 @@ static void rendernewtask() {
     lf_set_ptr_x_absolute(winw - (width + props.padding * 2.0f) - WIN_MARGIN);
     lf_set_ptr_y_absolute(winh - (lf_button_dimension(text).y + props.padding * 2.0f) - WIN_MARGIN);
 
-    if(lf_button_fixed(text,width, -1) == LF_CLICKED && form_complete) {
+    if((lf_button_fixed(text,width, -1) == LF_CLICKED || lf_key_is_down(GLFW_KEY_ENTER)) 
+      && form_complete) {
       task_entry* entry = (task_entry*)malloc(sizeof(*entry));
       entry->priority = selected_priority;
       entry->completed = false;
@@ -432,6 +432,8 @@ static void rendernewtask() {
       entry->desc = new_desc;
       entries[num_entries++] = entry;
       memset(new_task_input_buf, 0, sizeof(new_task_input_buf));
+      new_task_input.cursor_index = 0;
+      lf_input_field_unselect_all(&new_task_input);
       sort_entries_by_priority();
       serialize_todo_list("./tododata.bin");
     }
@@ -474,6 +476,7 @@ int main() {
 
   LfTheme theme = lf_default_theme();
   theme.div_props.color = LF_NO_COLOR;
+  theme.scrollbar_props.corner_radius = 2;
   lf_set_theme(theme);
 
   titlefont = lf_load_font("./assets/fonts/inter-bold.ttf", 30);
