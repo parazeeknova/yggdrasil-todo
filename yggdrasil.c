@@ -45,6 +45,46 @@ static LfTexture removetexture, backtexture;
 static LfInputField new_task_input;
 static char new_task_input_buf[512];
 
+char* get_command_output(const char* cmd) {
+    FILE *fp;
+    char buffer[1024];
+    char *result = NULL;
+    size_t result_size = 0;
+
+    // Opening a new pipe with the fiven command
+    fp = popen(cmd, "r");
+    if (fp == NULL) {
+        printf("Failed to run command\n");
+        return NULL;
+    }
+
+    // Reading the output
+    while (fgets(buffer, sizeof(buffer), fp) != NULL) {
+        size_t buffer_len = strlen(buffer);
+        char *temp = realloc(result, result_size + buffer_len + 1);
+        if (temp == NULL) {
+            printf("Memory allocation failed\n");
+            free(result);
+            pclose(fp);
+            return NULL;
+        }
+        result = temp;
+        strcpy(result + result_size, buffer);
+        result_size += buffer_len;
+    }
+    pclose(fp);
+    return result;
+}
+
+static int compare_entry_priority(const void* a, const void* b) {
+  task_entry* entry_a = *(task_entry**)a;
+  task_entry* entry_b = *(task_entry**)b;
+  return entry_b->priority - entry_a->priority;
+}
+static void sort_entries_by_priority() {
+  qsort(entries, num_entries, sizeof(task_entry*), compare_entry_priority);
+}
+
 static void rendertopbar() {
   lf_push_font(&titlefont);
   lf_text("Yggdrasil - Todo");
@@ -119,17 +159,29 @@ static void renderentries() {
 
   uint32_t renderedcount = 0;
   for(uint32_t i = 0; i < num_entries; i++) {
+    task_entry* entry = entries[i];
     if(current_filter == FILTER_LOW && entries[i]->priority != PRIORITY_LOW) continue;
     if(current_filter == FILTER_MEDIUM && entries[i]->priority != PRIORITY_MEDIUM) continue;
     if(current_filter == FILTER_HIGH && entries[i]->priority != PRIORITY_HIGH) continue;
     if(current_filter == FILTER_COMPLETED && !entries[i]->completed) continue;
     if(current_filter == FILTER_IN_PROGRESS && entries[i]->completed) continue;
 
-    task_entry* entry = entries[i];
     float priority_size = 15.0f;
     float ptry_before = lf_get_ptr_y();
     lf_set_ptr_x_absolute(lf_get_ptr_x() + 5.0f);
     lf_set_ptr_y_absolute(lf_get_ptr_y() + 5.0f);
+
+    bool clicked_priority = lf_hovered((vec2s){lf_get_ptr_x(), lf_get_ptr_y()}, (vec2s){priority_size, priority_size})
+      && lf_mouse_button_went_down(GLFW_MOUSE_BUTTON_LEFT);
+    
+    if(clicked_priority) {
+      if(entry->priority + 1 >= PRIORITY_HIGH + 1 ) {
+        entry->priority = 0;
+      } else {
+        entry->priority++;
+      }
+      sort_entries_by_priority();
+    }
     switch(entry -> priority) {
       case PRIORITY_LOW: {
         lf_rect(priority_size, priority_size, (LfColor){76, 175, 80, 255}, 4.0f);
@@ -276,8 +328,20 @@ static void rendernewtask() {
     lf_set_line_should_overflow(false);
     lf_set_ptr_x_absolute(winw - (width + props.padding * 2.0f) - WIN_MARGIN);
     lf_set_ptr_y_absolute(winh - (lf_button_dimension(text).y + props.padding * 2.0f) - WIN_MARGIN);
-    if(lf_button_fixed(text,width, -1) == LF_CLICKED && form_complete) {
 
+    if(lf_button_fixed(text,width, -1) == LF_CLICKED && form_complete) {
+      task_entry* entry = (task_entry*)malloc(sizeof(*entry));
+      entry->priority = selected_priority;
+      entry->completed = false;
+      entry->date = get_command_output("date +\"%d.%m.%Y, %H:%M\"");
+
+      char* new_desc = malloc(strlen(new_task_input_buf));
+      strcpy(new_desc, new_task_input_buf);
+
+      entry->desc = new_desc;
+      entries[num_entries++] = entry;
+      memset(new_task_input_buf, 0, sizeof(new_task_input_buf));
+      sort_entries_by_priority();
     }
     lf_set_line_should_overflow(true);
     lf_pop_style_props();
@@ -333,15 +397,6 @@ int main() {
     .buf_size = sizeof(new_task_input_buf),
     .placeholder = "Enter task description...",
   };
-
-  for(uint32_t i = 0; i < 5; i++) {
-    task_entry* entry = (task_entry*)malloc(sizeof(*entry));
-    entry->priority = PRIORITY_LOW;
-    entry->completed = false;
-    entry->date = "nothin";
-    entry->desc = "Buy a Cat";
-    entries[num_entries++] = entry;
-  }
 
   while (!glfwWindowShouldClose(window)) {
       glClear(GL_COLOR_BUFFER_BIT);
