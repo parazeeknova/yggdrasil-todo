@@ -60,7 +60,9 @@ static void rendertopbar() {
     props.border_width = 0.0f; props.corner_radius = 4.0f;
     lf_push_style_props(props);
     lf_set_line_should_overflow(false);
-    lf_button_fixed("New Task", 140, -1);
+    if(lf_button_fixed("New Task", 140, -1) == LF_CLICKED) {
+      current_tab = TAB_NEW_TASK;
+    };
     lf_set_line_should_overflow(true);
     lf_pop_style_props();
   }
@@ -147,7 +149,10 @@ static void renderentries() {
   {
     LfUIElementProps props = lf_get_theme().button_props;
     props.color = LF_NO_COLOR;
-    props.border_width = 0.0f; props.padding = 0.0f; props.margin_top = 3.0f; props.margin_left = 10.0f;
+    props.border_width = 0.0f; 
+    props.padding = 0.0f; 
+    props.margin_top = 3.0f; 
+    props.margin_left = 10.0f;
     lf_push_style_props(props);
     if(lf_image_button(((LfTexture){.id = removetexture.id, .width = 20, .height = 20})) == LF_CLICKED) {
       for(uint32_t j = i; j < num_entries -1; j++) {
@@ -159,7 +164,10 @@ static void renderentries() {
   }
   {
     LfUIElementProps props = lf_get_theme().checkbox_props;
-    props.border_width = 1.0f; props.corner_radius = 0.0f; props.margin_top = 0; props.padding= 5.0f;
+    props.border_width = 1.0f; 
+    props.corner_radius = 0.0f; 
+    props.margin_top = 0; 
+    props.padding= 5.0f;
     props.margin_left = 5.0f;
     props.color = lf_color_from_zto((vec4s){0.05f, 0.05f, 0.05f, 1.0f});
     lf_push_style_props(props);
@@ -244,9 +252,10 @@ static void rendernewtask() {
     };
     static bool opened = false;
     LfUIElementProps props = lf_get_theme().button_props;
-    props.color = (LfColor){70, 70, 70, 255};
+    props.color = lf_color_from_zto((vec4s){0.05f, 0.05f, 0.05f, 1.0f});
     props.text_color = LF_WHITE;
-    props.border_width = 0.0f; props.corner_radius = 5.0f;
+    props.border_width = 0.0f; 
+    props.corner_radius = 5.0f;
     lf_push_style_props(props);
     lf_dropdown_menu(items, "Priority", 3, 200, 80, &selected_priority, &opened);
     lf_pop_style_props();
@@ -258,9 +267,11 @@ static void rendernewtask() {
     const float width = 150.0f;
     
     LfUIElementProps props = lf_get_theme().button_props;
-    props.margin_left = 0.0f; props.margin_bottom = 0.0f;
-    props.corner_radius = 5.0f; props.border_width = 0.0f;
-    props.color = form_complete ? (LfColor){80, 80, 80, 255} : (LfColor){65, 167, 204, 255};
+    props.margin_left = 0.0f; 
+    props.margin_right = 0.0f;
+    props.corner_radius = 5.0f; 
+    props.border_width = 0.0f;
+    props.color = !form_complete ? (LfColor){80, 80, 80, 255} : (LfColor){65, 167, 204, 255};
     lf_push_style_props(props);
     lf_set_line_should_overflow(false);
     lf_set_ptr_x_absolute(winw - (width + props.padding * 2.0f) - WIN_MARGIN);
@@ -271,19 +282,24 @@ static void rendernewtask() {
     lf_set_line_should_overflow(true);
     lf_pop_style_props();
   }
+
   lf_next_line();
   {
     LfUIElementProps props = lf_get_theme().button_props;
-    props.color = LF_NO_COLOR; props.border_width = 0.0f;
-    props.padding = 0.0f; props.margin_left = 0.0f; props.margin_top = 0.0f;
-    props.margin_right = 0.0f; props.margin_bottom = 0.0f;
+    props.color = LF_NO_COLOR; 
+    props.border_width = 0.0f;
+    props.padding = 0.0f; 
+    props.margin_left = 0.0f; 
+    props.margin_top = 0.0f;
+    props.margin_right = 0.0f; 
+    props.margin_bottom = 0.0f;
     lf_push_style_props(props);
     lf_set_line_should_overflow(false);
-    LfTexture backbutton = (LfTexture){.id = backtexture.id, .width = 20, .height = 40};
+    LfTexture backbutton = (LfTexture){.id = backtexture.id, .width = 15, .height = 30};
     lf_set_ptr_y_absolute(winh - backbutton.height - WIN_MARGIN * 2.0f);
     lf_set_ptr_x_absolute(WIN_MARGIN);
 
-    if (lf_image_button(backtexture) == LF_CLICKED) {
+    if (lf_image_button(backbutton) == LF_CLICKED) {
       current_tab = TAB_DASHBOARD;
     }
     lf_set_line_should_overflow(true);
